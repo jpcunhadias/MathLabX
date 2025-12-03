@@ -20,10 +20,20 @@ def run_lab6():
         a_n = sympify(sequence_expr_str)
         
         n_vals = np.arange(n_min, n_max + 1)
-        seq_vals = [a_n.subs(n, val) for val in n_vals]
+        seq_vals = []
+        for val in n_vals:
+            term = a_n.subs(n, val)
+            try:
+                seq_vals.append(float(term))
+            except Exception:
+                seq_vals.append(np.nan)
         
         st.write("First few terms:")
-        st.write([float(val) for val in seq_vals[:5]])
+        st.write(seq_vals[:5])
+        if np.isnan(seq_vals).any():
+            st.warning(
+                "Some terms could not be evaluated as real numbers and are shown as NaN."
+            )
         
         fig, ax = plt.subplots()
         ax.plot(n_vals, seq_vals, 'o', color=config.DEFAULT_PLOT_COLOR)
