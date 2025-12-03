@@ -4,7 +4,10 @@ import streamlit as st
 from sympy import (
     Abs,
     Eq,
+    Poly,
     Symbol,
+    cancel,
+    gcd,
     lambdify,
     solve,
     solve_univariate_inequality,
@@ -70,6 +73,67 @@ def piecewise_values(expr_left, expr_right, breakpoint, x_vals):
     right_fn = lambdify(x, sympify(expr_right), "numpy")
     y_vals = np.where(x_vals < breakpoint, left_fn(x_vals), right_fn(x_vals))
     return y_vals
+
+
+def analyze_rational(numerator_str, denominator_str):
+    """Analyze rational function features: asymptotes, holes, and simplification."""
+    x = Symbol("x")
+    num = sympify(numerator_str)
+    den = sympify(denominator_str)
+    if den == 0:
+        raise ValueError("Denominator cannot be zero.")
+
+    num_poly = Poly(num, x)
+    den_poly = Poly(den, x)
+    common_poly = num_poly.gcd(den_poly)
+    holes = solve(Eq(common_poly.as_expr(), 0), x) if common_poly.degree() >= 1 else []
+
+    cancelled = cancel(num / den)
+    num_simplified, den_simplified = cancelled.as_numer_denom()
+
+    vertical_asymptotes = solve(Eq(den_simplified, 0), x)
+
+    p_num = Poly(num_simplified, x)
+    p_den = Poly(den_simplified, x)
+    deg_num = p_num.degree()
+    deg_den = p_den.degree()
+
+    horizontal_asymptote = None
+    oblique_asymptote = None
+    if deg_num < deg_den:
+        horizontal_asymptote = sympify(0)
+    elif deg_num == deg_den:
+        horizontal_asymptote = p_num.LC() / p_den.LC()
+    elif deg_den > 0 and deg_num == deg_den + 1:
+        quotient = p_num.quo(p_den)
+        oblique_asymptote = quotient.as_expr()
+
+    simplified_expr = num_simplified / den_simplified
+    return {
+        "holes": holes,
+        "vertical_asymptotes": vertical_asymptotes,
+        "horizontal_asymptote": horizontal_asymptote,
+        "oblique_asymptote": oblique_asymptote,
+        "simplified_expr": simplified_expr,
+    }
+
+
+def sign_samples(rational_expr, critical_points, x_min=-8.0, x_max=8.0):
+    """Sample sign on intervals defined by critical points (asymptotes/holes)."""
+    x = Symbol("x")
+    fn = lambdify(x, rational_expr, "numpy")
+    sorted_points = sorted(set(critical_points))
+    intervals = []
+    boundaries = [x_min] + sorted_points + [x_max]
+    for left, right in zip(boundaries[:-1], boundaries[1:]):
+        mid = (left + right) / 2
+        try:
+            val = fn(mid)
+            sign = np.sign(val)
+        except Exception:
+            sign = np.nan
+        intervals.append({"interval": (left, right), "sign": sign})
+    return intervals
 
 
 def run_lab5():
@@ -187,6 +251,90 @@ def run_lab5():
         st.latex(f"Solution: {solution}")
     except Exception as e:
         st.error(f"Could not solve inequality: {e}")
+
+    st.header("Rational Functions")
+    st.write("Analyze asymptotes, holes, and sign behavior of f(x) = p(x) / q(x).")
+    numerator_str = st.text_input("Numerator p(x)", "x**2 - 1")
+    denominator_str = st.text_input("Denominator q(x)", "x - 1")
+    try:
+        analysis = analyze_rational(numerator_str, denominator_str)
+        st.latex(f"f(x) = {analysis['simplified_expr']}")
+        if analysis["holes"]:
+            st.write(f"Holes at x = {analysis['holes']}")
+        if analysis["vertical_asymptotes"]:
+            st.write(f"Vertical asymptotes at x = {analysis['vertical_asymptotes']}")
+        if analysis["horizontal_asymptote"] is not None:
+            st.write(f"Horizontal asymptote: y = {analysis['horizontal_asymptote']}")
+        if analysis["oblique_asymptote"] is not None:
+            st.write(f"Oblique asymptote: y = {analysis['oblique_asymptote']}")
+
+        x_vals = np.linspace(-8, 8, 800)
+        x = Symbol("x")
+        fn = lambdify(x, analysis["simplified_expr"], "numpy")
+        y_vals = fn(x_vals)
+
+        # Mask near holes and vertical asymptotes for plot clarity
+        for a in analysis["holes"] + analysis["vertical_asymptotes"]:
+            y_vals[np.abs(x_vals - float(a)) < 0.05] = np.nan
+
+        fig_r, ax_r = plt.subplots()
+        ax_r.plot(
+            x_vals,
+            y_vals,
+            color=config.DEFAULT_PLOT_COLOR,
+            linewidth=config.DEFAULT_LINE_WIDTH,
+        )
+        for va in analysis["vertical_asymptotes"]:
+            ax_r.axvline(float(va), color="red", linestyle="--", linewidth=1.0)
+        if analysis["horizontal_asymptote"] is not None:
+            ax_r.axhline(
+                float(analysis["horizontal_asymptote"]),
+                color="#666666",
+                linestyle=":",
+                linewidth=1.0,
+            )
+        if analysis["oblique_asymptote"] is not None:
+            oa_fn = lambdify(x, analysis["oblique_asymptote"], "numpy")
+            ax_r.plot(
+                x_vals,
+                oa_fn(x_vals),
+                color="#999999",
+                linestyle=":",
+                linewidth=1.0,
+                label="Oblique asymptote",
+            )
+        for hole in analysis["holes"]:
+            try:
+                y_hole = fn(float(hole))
+                ax_r.scatter(
+                    [float(hole)],
+                    [y_hole],
+                    facecolors="white",
+                    edgecolors="red",
+                    zorder=5,
+                )
+            except Exception:
+                pass
+
+        ax_r.set_ylim(-10, 10)
+        ax_r.set_title("Rational Function")
+        ax_r.set_xlabel("x")
+        ax_r.set_ylabel("f(x)")
+        ax_r.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
+        st.pyplot(fig_r)
+
+        # Sign chart sampling
+        crit_points = [float(p) for p in analysis["holes"] + analysis["vertical_asymptotes"]]
+        sign_info = sign_samples(analysis["simplified_expr"], crit_points)
+        st.subheader("Sign by interval")
+        for entry in sign_info:
+            left, right = entry["interval"]
+            sign = entry["sign"]
+            label = "positive" if sign > 0 else "negative" if sign < 0 else "undefined"
+            st.write(f"{left:.1f} to {right:.1f}: {label}")
+
+    except Exception as e:
+        st.error(f"Error analyzing rational function: {e}")
 
     st.header("Polynomials")
 

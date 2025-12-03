@@ -13,6 +13,8 @@ from labs.lab5_precalculus import (
     compose_functions,
     invert_function,
     piecewise_values,
+    analyze_rational,
+    sign_samples,
     solve_scalar_inequality,
 )
 
@@ -37,6 +39,25 @@ class TestLab5Precalculus(unittest.TestCase):
     def test_solve_scalar_inequality(self):
         solution = solve_scalar_inequality("x**2 - 4 <= 0")
         self.assertEqual(solution, Interval(-2, 2))
+
+    def test_analyze_rational(self):
+        analysis = analyze_rational("x**2 - 1", "x - 1")
+        self.assertIn(sympify("1"), analysis["holes"])
+        self.assertEqual(analysis["vertical_asymptotes"], [])
+        self.assertIsNone(analysis["horizontal_asymptote"])
+        self.assertIsNone(analysis["oblique_asymptote"])
+
+    def test_sign_samples(self):
+        expr = sympify("1/(x - 1)")
+        samples = sign_samples(expr, [1], x_min=-3, x_max=3)
+        labels = [s["sign"] for s in samples]
+        self.assertLess(labels[0], 0)
+        self.assertGreater(labels[1], 0)
+
+    def test_oblique_detection(self):
+        analysis = analyze_rational("x**2 + 1", "x")
+        self.assertIsNone(analysis["horizontal_asymptote"])
+        self.assertEqual(sympify("x"), analysis["oblique_asymptote"])
 
 
 if __name__ == "__main__":
