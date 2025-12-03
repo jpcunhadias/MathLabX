@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import streamlit as st
+import plotly.graph_objects as go
 from sympy import (
     Abs,
     Eq,
     Poly,
     Symbol,
     cancel,
-    gcd,
     lambdify,
     solve,
     solve_univariate_inequality,
@@ -139,6 +138,18 @@ def sign_samples(rational_expr, critical_points, x_min=-8.0, x_max=8.0):
 def run_lab5():
     st.title("Precalculus")
 
+    # Shared plot styling
+    def base_figure():
+        fig = go.Figure()
+        fig.update_layout(
+            template="plotly_white",
+            margin=dict(l=20, r=20, t=40, b=20),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            xaxis=dict(showgrid=True, gridcolor="#e5e7eb", zeroline=True, zerolinecolor="#d1d5db"),
+            yaxis=dict(showgrid=True, gridcolor="#e5e7eb", zeroline=True, zerolinecolor="#d1d5db"),
+        )
+        return fig
+
     st.header("Function Transformations")
     base_choice = st.selectbox("Base function", list(BASE_FUNCTIONS.keys()))
     a = st.slider("Vertical scale (a)", -3.0, 3.0, 1.0, 0.1)
@@ -163,30 +174,23 @@ def run_lab5():
     base_fn = lambdify(x, sympify(base_expr_str), "numpy")
     transformed_fn = lambdify(x, transformed_expr, "numpy")
 
-    fig, ax = plt.subplots()
-    ax.plot(
-        x_vals,
-        base_fn(x_vals),
-        label=f"f(x) = {base_choice}",
-        linestyle="--",
-        color="#999999",
+    fig = base_figure()
+    fig.add_scatter(
+        x=x_vals,
+        y=base_fn(x_vals),
+        name=f"f(x) = {base_choice}",
+        line=dict(color="#9ca3af", dash="dash"),
     )
-    ax.plot(
-        x_vals,
-        transformed_fn(x_vals),
-        label=rf"g(x) = {a}·f({b}(x - {c})) + {d}",
-        color=config.DEFAULT_PLOT_COLOR,
-        linewidth=config.DEFAULT_LINE_WIDTH,
+    fig.add_scatter(
+        x=x_vals,
+        y=transformed_fn(x_vals),
+        name=rf"g(x) = {a}·f({b}(x - {c})) + {d}",
+        line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
     )
-    ax.axhline(0, color="#cccccc", linewidth=0.8)
-    ax.axvline(c, color="#cccccc", linewidth=0.8, linestyle=":")
-    ax.set_title("Transformations")
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-    ax.legend()
+    fig.add_shape(type="line", x0=c, x1=c, y0=min(transformed_fn(x_vals)), y1=max(transformed_fn(x_vals)), line=dict(color="#d1d5db", dash="dot"))
+    fig.update_layout(title="Transformations", xaxis_title="x", yaxis_title="y")
     st.latex(f"g(x) = {transformed_expr}")
-    st.pyplot(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
     st.header("Composition and Inverses")
     f_str = st.text_input("f(x) =", "x**2 + 1")
@@ -214,17 +218,17 @@ def run_lab5():
         y_vals_piecewise = piecewise_values(
             expr_left, expr_right, breakpoint, x_vals_piecewise
         )
-        fig_pw, ax_pw = plt.subplots()
-        ax_pw.plot(
-            x_vals_piecewise,
-            y_vals_piecewise,
-            color=config.DEFAULT_PLOT_COLOR,
-            linewidth=config.DEFAULT_LINE_WIDTH,
+        fig_pw = base_figure()
+        fig_pw.add_scatter(
+            x=x_vals_piecewise,
+            y=y_vals_piecewise,
+            mode="lines",
+            name="Piecewise",
+            line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
         )
-        ax_pw.axvline(breakpoint, color="red", linestyle="--", linewidth=1.0)
-        ax_pw.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-        ax_pw.set_title("Piecewise Function")
-        st.pyplot(fig_pw)
+        fig_pw.add_shape(type="line", x0=breakpoint, x1=breakpoint, y0=min(y_vals_piecewise), y1=max(y_vals_piecewise), line=dict(color="red", dash="dash"))
+        fig_pw.update_layout(title="Piecewise Function", xaxis_title="x", yaxis_title="y")
+        st.plotly_chart(fig_pw, use_container_width=True)
     except Exception as e:
         st.error(f"Error in piecewise setup: {e}")
 
@@ -236,13 +240,18 @@ def run_lab5():
     x_vals_abs = np.linspace(-10, 10, 400)
     abs_expr = abs_a * Abs(Symbol("x") - abs_b) + abs_c
     abs_fn = lambdify(Symbol("x"), abs_expr, "numpy")
-    fig_abs, ax_abs = plt.subplots()
-    ax_abs.plot(x_vals_abs, abs_fn(x_vals_abs), color=config.DEFAULT_PLOT_COLOR)
-    ax_abs.axhline(line_k, color="red", linestyle="--")
-    ax_abs.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-    ax_abs.set_title(r"$a|x - b| + c$")
+    fig_abs = base_figure()
+    fig_abs.add_scatter(
+        x=x_vals_abs,
+        y=abs_fn(x_vals_abs),
+        mode="lines",
+        name="Absolute",
+        line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
+    )
+    fig_abs.add_shape(type="line", x0=x_vals_abs.min(), x1=x_vals_abs.max(), y0=line_k, y1=line_k, line=dict(color="red", dash="dash"))
+    fig_abs.update_layout(title=r"$a|x - b| + c$", xaxis_title="x", yaxis_title="y")
     st.latex(f"y = {abs_expr}")
-    st.pyplot(fig_abs)
+    st.plotly_chart(fig_abs, use_container_width=True)
 
     st.subheader("Inequality solver (single variable)")
     inequality_str = st.text_input("Enter inequality (e.g., x**2 - 4 <= 0)", "x**2 - 4 <= 0")
@@ -277,51 +286,62 @@ def run_lab5():
         for a in analysis["holes"] + analysis["vertical_asymptotes"]:
             y_vals[np.abs(x_vals - float(a)) < 0.05] = np.nan
 
-        fig_r, ax_r = plt.subplots()
-        ax_r.plot(
-            x_vals,
-            y_vals,
-            color=config.DEFAULT_PLOT_COLOR,
-            linewidth=config.DEFAULT_LINE_WIDTH,
+        fig_r = base_figure()
+        fig_r.add_scatter(
+            x=x_vals,
+            y=y_vals,
+            mode="lines",
+            name="f(x)",
+            line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
         )
         for va in analysis["vertical_asymptotes"]:
-            ax_r.axvline(float(va), color="red", linestyle="--", linewidth=1.0)
+            fig_r.add_shape(
+                type="line",
+                x0=float(va),
+                x1=float(va),
+                y0=-10,
+                y1=10,
+                line=dict(color="red", dash="dash"),
+            )
         if analysis["horizontal_asymptote"] is not None:
-            ax_r.axhline(
-                float(analysis["horizontal_asymptote"]),
-                color="#666666",
-                linestyle=":",
-                linewidth=1.0,
+            fig_r.add_shape(
+                type="line",
+                x0=x_vals.min(),
+                x1=x_vals.max(),
+                y0=float(analysis["horizontal_asymptote"]),
+                y1=float(analysis["horizontal_asymptote"]),
+                line=dict(color="#666666", dash="dot"),
             )
         if analysis["oblique_asymptote"] is not None:
             oa_fn = lambdify(x, analysis["oblique_asymptote"], "numpy")
-            ax_r.plot(
-                x_vals,
-                oa_fn(x_vals),
-                color="#999999",
-                linestyle=":",
-                linewidth=1.0,
-                label="Oblique asymptote",
+            fig_r.add_scatter(
+                x=x_vals,
+                y=oa_fn(x_vals),
+                mode="lines",
+                name="Oblique asymptote",
+                line=dict(color="#999999", dash="dot"),
             )
         for hole in analysis["holes"]:
             try:
                 y_hole = fn(float(hole))
-                ax_r.scatter(
-                    [float(hole)],
-                    [y_hole],
-                    facecolors="white",
-                    edgecolors="red",
-                    zorder=5,
+                fig_r.add_scatter(
+                    x=[float(hole)],
+                    y=[y_hole],
+                    mode="markers",
+                    marker=dict(color="red", size=9, symbol="circle-open"),
+                    name="Hole",
+                    showlegend=False,
                 )
             except Exception:
                 pass
 
-        ax_r.set_ylim(-10, 10)
-        ax_r.set_title("Rational Function")
-        ax_r.set_xlabel("x")
-        ax_r.set_ylabel("f(x)")
-        ax_r.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-        st.pyplot(fig_r)
+        fig_r.update_layout(
+            title="Rational Function",
+            xaxis_title="x",
+            yaxis_title="f(x)",
+            yaxis=dict(range=[-10, 10]),
+        )
+        st.plotly_chart(fig_r, use_container_width=True)
 
         # Sign chart sampling
         crit_points = [float(p) for p in analysis["holes"] + analysis["vertical_asymptotes"]]
@@ -361,18 +381,16 @@ def run_lab5():
         x = np.linspace(-10, 10, 400)
         y = p(x)
 
-        fig, ax = plt.subplots()
-        ax.plot(
-            x,
-            y,
-            color=config.DEFAULT_PLOT_COLOR,
-            linewidth=config.DEFAULT_LINE_WIDTH,
+        fig_poly = base_figure()
+        fig_poly.add_scatter(
+            x=x,
+            y=y,
+            mode="lines",
+            name="p(x)",
+            line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
         )
-        ax.set_title("Polynomial Plot")
-        ax.set_xlabel("x")
-        ax.set_ylabel("y")
-        ax.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-        st.pyplot(fig)
+        fig_poly.update_layout(title="Polynomial Plot", xaxis_title="x", yaxis_title="y")
+        st.plotly_chart(fig_poly, use_container_width=True)
 
         # Find and display the roots
         roots = np.roots(coeffs)
@@ -404,38 +422,50 @@ def run_lab5():
         # For tan, we need to handle the vertical asymptotes
         y[np.abs(y) > 20] = np.nan
 
-    fig, ax = plt.subplots()
-    ax.plot(
-        x,
-        y,
-        color=config.DEFAULT_PLOT_COLOR,
-        linewidth=config.DEFAULT_LINE_WIDTH,
+    fig_trig = base_figure()
+    fig_trig.add_scatter(
+        x=x,
+        y=y,
+        mode="lines",
+        name=f"{trig_function}(x)",
+        line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
     )
-    ax.axhline(y=c, color='r', linestyle='--')
+    fig_trig.add_shape(
+        type="line",
+        x0=x.min(),
+        x1=x.max(),
+        y0=c,
+        y1=c,
+        line=dict(color="red", dash="dash"),
+    )
 
     # Find intersection points
     intersections_x = []
     intersections_y = []
     for i in range(len(x) - 1):
-        if (y[i] - c) * (y[i+1] - c) < 0:
-            intersections_x.append((x[i] + x[i+1]) / 2)
+        if (y[i] - c) * (y[i + 1] - c) < 0:
+            intersections_x.append((x[i] + x[i + 1]) / 2)
             intersections_y.append(c)
-    
+
     if intersections_x:
-        ax.scatter(intersections_x, intersections_y, color='red', zorder=5)
+        fig_trig.add_scatter(
+            x=intersections_x,
+            y=intersections_y,
+            mode="markers",
+            marker=dict(color="red", size=8),
+            name="Intersections",
+        )
         st.write("Intersection points (approximate):")
-        for i, (ix, iy) in enumerate(zip(intersections_x, intersections_y)):
+        for ix, iy in zip(intersections_x, intersections_y):
             st.write(f"  ({ix:.2f}, {iy:.2f})")
 
-
-    ax.set_title(
-        f"{amplitude} * {trig_function}({frequency} * (x + {phase_shift:.2f}))"
+    fig_trig.update_layout(
+        title=f"{amplitude} * {trig_function}({frequency} * (x + {phase_shift:.2f}))",
+        xaxis_title="x",
+        yaxis_title="y",
+        yaxis=dict(range=[-5, 5]),
     )
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.set_ylim(-5, 5)
-    ax.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-    st.pyplot(fig)
+    st.plotly_chart(fig_trig, use_container_width=True)
 
     st.header("Exponentials and Logarithms")
 
@@ -465,15 +495,13 @@ def run_lab5():
         if use_e:
             title = "$\\ln(x)$"
 
-    fig, ax = plt.subplots()
-    ax.plot(
-        x,
-        y,
-        color=config.DEFAULT_PLOT_COLOR,
-        linewidth=config.DEFAULT_LINE_WIDTH,
+    fig_exp = base_figure()
+    fig_exp.add_scatter(
+        x=x,
+        y=y,
+        mode="lines",
+        name=exp_log_function,
+        line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
     )
-    ax.set_title(title)
-    ax.set_xlabel("x")
-    ax.set_ylabel("y")
-    ax.grid(True, linestyle=config.DEFAULT_GRID_STYLE)
-    st.pyplot(fig)
+    fig_exp.update_layout(title=title, xaxis_title="x", yaxis_title="y")
+    st.plotly_chart(fig_exp, use_container_width=True)

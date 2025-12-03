@@ -5,8 +5,10 @@ from unittest.mock import MagicMock
 import numpy as np
 from sympy import Interval, sympify
 
-# Mock streamlit to import the lab module safely
+# Mock heavy UI dependencies to import the lab module safely
 sys.modules["streamlit"] = MagicMock()
+sys.modules["plotly"] = MagicMock()
+sys.modules["plotly.graph_objects"] = MagicMock()
 
 from labs.lab5_precalculus import (
     build_transformed_expression,
