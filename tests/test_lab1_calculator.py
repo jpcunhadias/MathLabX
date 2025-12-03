@@ -1,12 +1,16 @@
 import unittest
 import sys
 from unittest.mock import MagicMock
-from sympy import sympify, symbols
+from sympy import sympify
+from labs.lab1_calculator import (
+    calculate_derivative,
+    calculate_integral,
+    calculate_limit,
+)
 
 # Mock the streamlit module
-sys.modules['streamlit'] = MagicMock()
+sys.modules["streamlit"] = MagicMock()
 
-from labs.lab1_calculator import calculate_derivative, calculate_integral, calculate_limit
 
 class TestLab1Calculator(unittest.TestCase):
 
@@ -23,5 +27,6 @@ class TestLab1Calculator(unittest.TestCase):
         self.assertEqual(calculate_limit("1/x", "oo"), sympify("0"))
         self.assertEqual(calculate_limit("sin(x)/x", "0"), sympify("1"))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
