@@ -4,15 +4,13 @@ from unittest.mock import MagicMock
 
 import numpy as np
 from sympy import sympify
+from labs.lab2_calculus import calculate_derivative_data
 
 # Mock the streamlit and matplotlib modules
 sys.modules["streamlit"] = MagicMock()
 sys.modules["matplotlib"] = MagicMock()
 sys.modules["matplotlib.pyplot"] = MagicMock()
 sys.modules["matplotlib.patches"] = MagicMock()
-
-
-from labs.lab2_calculus import calculate_derivative_data
 
 
 class TestLab2Calculus(unittest.TestCase):
