@@ -67,3 +67,5 @@ venv.bak/
 # Gemini
 .gemini/
 .geminiignore
+GEMINI.md
+AGENTS.md
