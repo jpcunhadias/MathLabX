@@ -190,7 +190,7 @@ def run_lab5():
     fig.add_shape(type="line", x0=c, x1=c, y0=min(transformed_fn(x_vals)), y1=max(transformed_fn(x_vals)), line=dict(color="#d1d5db", dash="dot"))
     fig.update_layout(title="Transformations", xaxis_title="x", yaxis_title="y")
     st.latex(f"g(x) = {transformed_expr}")
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width=900)
 
     st.header("Composition and Inverses")
     f_str = st.text_input("f(x) =", "x**2 + 1")
@@ -228,7 +228,7 @@ def run_lab5():
         )
         fig_pw.add_shape(type="line", x0=breakpoint, x1=breakpoint, y0=min(y_vals_piecewise), y1=max(y_vals_piecewise), line=dict(color="red", dash="dash"))
         fig_pw.update_layout(title="Piecewise Function", xaxis_title="x", yaxis_title="y")
-        st.plotly_chart(fig_pw, use_container_width=True)
+        st.plotly_chart(fig_pw, width=900)
     except Exception as e:
         st.error(f"Error in piecewise setup: {e}")
 
@@ -251,7 +251,7 @@ def run_lab5():
     fig_abs.add_shape(type="line", x0=x_vals_abs.min(), x1=x_vals_abs.max(), y0=line_k, y1=line_k, line=dict(color="red", dash="dash"))
     fig_abs.update_layout(title=r"$a|x - b| + c$", xaxis_title="x", yaxis_title="y")
     st.latex(f"y = {abs_expr}")
-    st.plotly_chart(fig_abs, use_container_width=True)
+    st.plotly_chart(fig_abs, width=900)
 
     st.subheader("Inequality solver (single variable)")
     inequality_str = st.text_input("Enter inequality (e.g., x**2 - 4 <= 0)", "x**2 - 4 <= 0")
@@ -341,7 +341,7 @@ def run_lab5():
             yaxis_title="f(x)",
             yaxis=dict(range=[-10, 10]),
         )
-        st.plotly_chart(fig_r, use_container_width=True)
+        st.plotly_chart(fig_r, width=900)
 
         # Sign chart sampling
         crit_points = [float(p) for p in analysis["holes"] + analysis["vertical_asymptotes"]]
@@ -390,7 +390,7 @@ def run_lab5():
             line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
         )
         fig_poly.update_layout(title="Polynomial Plot", xaxis_title="x", yaxis_title="y")
-        st.plotly_chart(fig_poly, use_container_width=True)
+        st.plotly_chart(fig_poly, width=900)
 
         # Find and display the roots
         roots = np.roots(coeffs)
@@ -465,7 +465,7 @@ def run_lab5():
         yaxis_title="y",
         yaxis=dict(range=[-5, 5]),
     )
-    st.plotly_chart(fig_trig, use_container_width=True)
+    st.plotly_chart(fig_trig, width=900)
 
     st.header("Exponentials and Logarithms")
 
@@ -504,4 +504,4 @@ def run_lab5():
         line=dict(color=config.DEFAULT_PLOT_COLOR, width=3),
     )
     fig_exp.update_layout(title=title, xaxis_title="x", yaxis_title="y")
-    st.plotly_chart(fig_exp, use_container_width=True)
+    st.plotly_chart(fig_exp, width=900)
