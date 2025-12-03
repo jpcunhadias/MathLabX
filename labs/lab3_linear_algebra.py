@@ -3,11 +3,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
+
 def calculate_2d_vectors_data(v_x, v_y, w_x, w_y):
     v = np.array([v_x, v_y])
     w = np.array([w_x, w_y])
     v_plus_w = v + w
     return {"v": v, "w": w, "v_plus_w": v_plus_w}
+
 
 def calculate_matrix_transformation_data(A):
     # Unit square vertices
@@ -27,10 +29,13 @@ def calculate_matrix_transformation_data(A):
         "eigenvectors": eigenvectors,
     }
 
+
 def run_lab3():
     st.title("Lab 3: Linear Algebra: Vectors & Transformations")
 
-    sub_lab = st.radio("Select a page:", ("2D Vectors", "Matrix as Transformation"))
+    sub_lab = st.radio(
+        "Select a page:", ("2D Vectors", "Matrix as Transformation")
+    )
 
     if sub_lab == "2D Vectors":
         st.subheader("2D Vectors")
@@ -38,11 +43,12 @@ def run_lab3():
         v_x_str, v_y_str = st.columns(2)
         v_x = float(v_x_str.text_input("Vector v: x", "1"))
         v_y = float(v_y_str.text_input("Vector v: y", "2"))
-        
+
         w_x_str, w_y_str = st.columns(2)
         w_x = float(w_x_str.text_input("Vector w: x", "3"))
         w_y = float(w_y_str.text_input("Vector w: y", "1"))
 
+        scalar = st.slider("Scalar for v", -3.0, 3.0, 1.0)
         show_basis = st.checkbox("Show basis vectors (e1, e2)")
 
         try:
@@ -50,27 +56,93 @@ def run_lab3():
             v = vector_data["v"]
             w = vector_data["w"]
             v_plus_w = vector_data["v_plus_w"]
+            v_scaled = v * scalar
 
             fig, ax = plt.subplots()
 
             # Plot vectors
-            ax.quiver(0, 0, v[0], v[1], angles='xy', scale_units='xy', scale=1, color='r', label='v')
-            ax.quiver(0, 0, w[0], w[1], angles='xy', scale_units='xy', scale=1, color='b', label='w')
-            ax.quiver(0, 0, v_plus_w[0], v_plus_w[1], angles='xy', scale_units='xy', scale=1, color='g', label='v+w')
+            ax.quiver(
+                0,
+                0,
+                v[0],
+                v[1],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="r",
+                label="v",
+            )
+            ax.quiver(
+                0,
+                0,
+                v_scaled[0],
+                v_scaled[1],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="purple",
+                label=f"{scalar}v",
+            )
+            ax.quiver(
+                0,
+                0,
+                w[0],
+                w[1],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="b",
+                label="w",
+            )
+            ax.quiver(
+                0,
+                0,
+                v_plus_w[0],
+                v_plus_w[1],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="g",
+                label="v+w",
+            )
 
             if show_basis:
-                ax.quiver(0, 0, 1, 0, angles='xy', scale_units='xy', scale=1, color='gray', label='e1', linestyle='--')
-                ax.quiver(0, 0, 0, 1, angles='xy', scale_units='xy', scale=1, color='gray', label='e2', linestyle='--')
+                ax.quiver(
+                    0,
+                    0,
+                    1,
+                    0,
+                    angles="xy",
+                    scale_units="xy",
+                    scale=1,
+                    color="gray",
+                    label="e1",
+                    linestyle="--",
+                )
+                ax.quiver(
+                    0,
+                    0,
+                    0,
+                    1,
+                    angles="xy",
+                    scale_units="xy",
+                    scale=1,
+                    color="gray",
+                    label="e2",
+                    linestyle="--",
+                )
 
-            ax.set_xlim([-max(abs(v_x), abs(w_x), abs(v_plus_w[0]))-1, max(abs(v_x), abs(w_x), abs(v_plus_w[0]))+1])
-            ax.set_ylim([-max(abs(v_y), abs(w_y), abs(v_plus_w[1]))-1, max(abs(v_y), abs(w_y), abs(v_plus_w[1]))+1])
+            all_x = [v[0], w[0], v_plus_w[0], v_scaled[0]]
+            all_y = [v[1], w[1], v_plus_w[1], v_scaled[1]]
+            ax.set_xlim([-max(np.abs(all_x)) - 1, max(np.abs(all_x)) + 1])
+            ax.set_ylim([-max(np.abs(all_y)) - 1, max(np.abs(all_y)) + 1])
             ax.set_xlabel("x")
             ax.set_ylabel("y")
-            ax.axhline(0, color='grey', lw=0.5)
-            ax.axvline(0, color='grey', lw=0.5)
+            ax.axhline(0, color="grey", lw=0.5)
+            ax.axvline(0, color="grey", lw=0.5)
             ax.grid(True)
             ax.legend()
-            ax.set_aspect('equal', adjustable='box')
+            ax.set_aspect("equal", adjustable="box")
             st.pyplot(fig)
 
         except Exception as e:
@@ -97,16 +169,73 @@ def run_lab3():
             fig, ax = plt.subplots()
 
             # Plot original and transformed squares
-            ax.add_patch(Polygon(unit_square, closed=True, fill=True, color='lightblue', label='Unit Square'))
-            ax.add_patch(Polygon(transformed_square, closed=True, fill=True, color='lightcoral', alpha=0.7, label='Transformed'))
+            ax.add_patch(
+                Polygon(
+                    unit_square,
+                    closed=True,
+                    fill=True,
+                    color="lightblue",
+                    label="Unit Square",
+                )
+            )
+            ax.add_patch(
+                Polygon(
+                    transformed_square,
+                    closed=True,
+                    fill=True,
+                    color="lightcoral",
+                    alpha=0.7,
+                    label="Transformed",
+                )
+            )
 
             # Plot basis vectors
-            ax.quiver(0, 0, 1, 0, angles='xy', scale_units='xy', scale=1, color='gray', linestyle='--')
-            ax.quiver(0, 0, 0, 1, angles='xy', scale_units='xy', scale=1, color='gray', linestyle='--')
-            
+            ax.quiver(
+                0,
+                0,
+                1,
+                0,
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="gray",
+                linestyle="--",
+            )
+            ax.quiver(
+                0,
+                0,
+                0,
+                1,
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="gray",
+                linestyle="--",
+            )
+
             # Plot transformed basis vectors
-            ax.quiver(0, 0, A[0,0], A[1,0], angles='xy', scale_units='xy', scale=1, color='r', label='T(e1)')
-            ax.quiver(0, 0, A[0,1], A[1,1], angles='xy', scale_units='xy', scale=1, color='b', label='T(e2)')
+            ax.quiver(
+                0,
+                0,
+                A[0, 0],
+                A[1, 0],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="r",
+                label="T(e1)",
+            )
+            ax.quiver(
+                0,
+                0,
+                A[0, 1],
+                A[1, 1],
+                angles="xy",
+                scale_units="xy",
+                scale=1,
+                color="b",
+                label="T(e2)",
+            )
 
             all_points = np.vstack([unit_square, transformed_square])
             x_min, y_min = all_points.min(axis=0)
@@ -116,13 +245,13 @@ def run_lab3():
             ax.set_ylim([min(y_min, -1) - 1, max(y_max, 1) + 1])
             ax.set_xlabel("x")
             ax.set_ylabel("y")
-            ax.axhline(0, color='grey', lw=0.5)
-            ax.axvline(0, color='grey', lw=0.5)
+            ax.axhline(0, color="grey", lw=0.5)
+            ax.axvline(0, color="grey", lw=0.5)
             ax.grid(True)
             ax.legend()
-            ax.set_aspect('equal', adjustable='box')
+            ax.set_aspect("equal", adjustable="box")
             st.pyplot(fig)
-            
+
             if data["eigenvalues"] is not None:
                 st.write("Eigenvalues:", data["eigenvalues"])
                 st.write("Eigenvectors:")
